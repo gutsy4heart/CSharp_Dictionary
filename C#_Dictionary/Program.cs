@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Xml;
+using System.Reflection.PortableExecutable;
+using System.Threading;
 
 internal class TranslateDictionary
 {
@@ -18,7 +19,6 @@ internal class TranslateDictionary
         this.dictionary = new Dictionary<string, List<string>>();
     }
 
-    // добавить слово в словарь
     public void AddWord(string word, List<string> translation)
     {
         if (dictionary.ContainsKey(word))
@@ -37,7 +37,6 @@ internal class TranslateDictionary
         }
     }
 
-    // Метод для удаления слова из словаря в файле
     public void RemoveWord(string word, string filename)
     {
         if (File.Exists(filename))
@@ -70,7 +69,6 @@ internal class TranslateDictionary
         }
     }
 
-    // Метод для удаления перевода слова из словаря в файле
     public void RemoveTranslation(string word, string translation, string filename)
     {
         if (File.Exists(filename))
@@ -121,7 +119,6 @@ internal class TranslateDictionary
         }
     }
 
-    // найти слово в файле словаря
     public void SearchWord(string word, string filename)
     {
         if (File.Exists(filename))
@@ -151,8 +148,80 @@ internal class TranslateDictionary
         }
     }
 
+    public void ReplaceWord(string oldWord, string newWord, string filename)
+    {
+        if (File.Exists(filename))
+        {
+            var lines = File.ReadAllLines(filename).ToList();
+            var replaced = false;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var parts = lines[i].Split(':');
+                if (parts.Length == 2 && parts[0].Trim() == oldWord)
+                {
+                    lines[i] = $"{newWord}: {parts[1].Trim()}";
+                    replaced = true;
+                    break;
+                }
+            }
+            if (replaced)
+            {
+                File.WriteAllLines(filename, lines);
+                Console.WriteLine($"Слово '{oldWord}' заменено на '{newWord}' в словаре в файле '{filename}'.");
+            }
+            else
+            {
+                Console.WriteLine($"Слово '{oldWord}' не найдено в словаре в файле '{filename}'.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Файл словаря '{filename}' не найден.");
+        }
+    }
 
-
+    public void ReplaceTranslation(string word, string oldTranslation, string newTranslation, string filename)
+    {
+        if (File.Exists(filename))
+        {
+            var lines = File.ReadAllLines(filename).ToList();
+            var replaced = false;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var parts = lines[i].Split(':');
+                if (parts.Length == 2 && parts[0].Trim() == word)
+                {
+                    var translations = parts[1].Split(',').Select(t => t.Trim()).ToList();
+                    if (translations.Contains(oldTranslation))
+                    {
+                        var index = translations.IndexOf(oldTranslation);
+                        translations[index] = newTranslation;
+                        lines[i] = $"{word}: {string.Join(", ", translations)}";
+                        replaced = true;
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Перевод '{oldTranslation}' для слова '{word}' не найден в словаре в файле '{filename}'.");
+                        return;
+                    }
+                }
+            }
+            if (replaced)
+            {
+                File.WriteAllLines(filename, lines);
+                Console.WriteLine($"Перевод '{oldTranslation}' для слова '{word}' заменен на '{newTranslation}' в словаре в файле '{filename}'.");
+            }
+            else
+            {
+                Console.WriteLine($"Слово '{word}' не найдено в словаре в файле '{filename}'.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Файл словаря '{filename}' не найден.");
+        }
+    }
 
     public void LoadDictionaryFromFile(string filename)
     {
@@ -170,14 +239,12 @@ internal class TranslateDictionary
                     dictionary[word] = translations;
                 }
             }
-            Console.WriteLine("Словарь загружен из файла.");
         }
         else
         {
             Console.WriteLine("Файл со словарем не найден.");
         }
     }
-
 
     public void SaveDictionaryToFile(string filename)
     {
@@ -190,11 +257,30 @@ internal class TranslateDictionary
         }
     }
 
-    // создание словаря
+
+    public void ExportDictionaryToFile(string selectedFile, string exportFileName)
+    {
+        if (File.Exists(selectedFile))
+        {
+            File.Copy(selectedFile, exportFileName, true);
+            Console.WriteLine($"Словарь успешно экспортирован в файл '{exportFileName}'.");
+        }
+        else
+        {
+            Console.WriteLine($"Файл словаря '{selectedFile}' не найден.");
+        }
+    }
+
+
     public static TranslateDictionary CreateDictionary(string languageFrom, string languageTo)
     {
         return new TranslateDictionary(languageTo, languageFrom);
     }
+    public Dictionary<string, List<string>> GetDictionary()
+    {
+        return dictionary;
+    }
+
 }
 
 class Program
@@ -220,12 +306,14 @@ class Program
         }
 
         string? menu = @"Меню:
-1. Создать новый словарь.+
-2. Добавить слово в существующий словарь.+
-3. Найти слово.+
-4. Удалить слово.+
-5. Удалить перевод слова.+
-6. Выйти из программы.";
+1. Создать новый словарь.
+2. Добавить слово в существующий словарь.
+3. Заменить слово или его перевод в словаре.
+4. Найти слово.
+5. Слова и перевод(ы) экспортировать в отдельный файл
+6. Удалить слово.
+7. Удалить перевод слова.
+8. Выйти из программы.";
 
         bool exit = false;
         while (!exit)
@@ -243,7 +331,7 @@ class Program
                     Console.Write("На какой язык? ");
                     languageTo = Console.ReadLine();
                     Console.Write("Введите имя файла для сохранения словаря(.txt): ");
-                    filename = Console.ReadLine();
+                    filename = Console.ReadLine() + ".txt";
 
                     TranslateDictionary newDictionary = new TranslateDictionary(languageTo, languageFrom);
                     existingDictionaries[filename] = newDictionary;
@@ -295,16 +383,82 @@ class Program
                     {
                         Console.WriteLine(dictName);
                     }
-                    Console.Write("Введите имя файла словаря: ");
-                    string? selectedFile = Console.ReadLine();
-                    Console.Write("Введите искаемое слово: ");
-                    string? searchWord = Console.ReadLine();
-                    dic.SearchWord(searchWord, selectedFile);
-                    Thread.Sleep(10000);
-                    Console.Clear();
+                    Console.Write("Введите имя словаря: ");
+                    string? selectedDictName = Convert.ToString(Console.ReadLine());
+                    Console.WriteLine($"Словарь '{selectedDictName}':");
+                    if (existingDictionaries.ContainsKey(selectedDictName))
+                    {
+                        uint i = 1;
+                        TranslateDictionary words = existingDictionaries[selectedDictName];
+                        foreach (var word in existingDictionaries[selectedDictName].GetDictionary())
+                        {
+                            Console.WriteLine($"{i}. {word.Key}: {string.Join(", ", word.Value)}");
+                            i++;
+                        }
+                        Console.WriteLine();
+                        Console.WriteLine("Выберите действие:");
+                        Console.WriteLine("1. Заменить слово");
+                        Console.WriteLine("2. Заменить перевод слова");
+                        Console.Write("Ваш выбор: ");
+                        string replaceChoice = Console.ReadLine();
+                        switch (replaceChoice)
+                        {
+                            case "1":
+                                Console.Write("Введите слово, которое хотите заменить: ");
+                                string oldWord = Console.ReadLine();
+                                Console.Write("Введите новое слово: ");
+                                string newWord = Console.ReadLine();
+                                existingDictionaries[selectedDictName].ReplaceWord(oldWord, newWord, selectedDictName + ".txt");
+                                break;
+                            case "2":
+                                Console.Write("Введите слово: ");
+                                string selectedWord = Console.ReadLine();
+                                Console.Write("Введите старый перевод: ");
+                                string oldTranslation = Console.ReadLine();
+                                Console.Write("Введите новый перевод: ");
+                                string newTranslation = Console.ReadLine();
+                                existingDictionaries[selectedDictName].ReplaceTranslation(selectedWord, oldTranslation, newTranslation, selectedDictName + ".txt");
+                                break;
+                            default:
+                                Console.WriteLine("Неверный ввод.");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Словарь не найден.");
+                    }
                     break;
 
                 case "4":
+                    Console.WriteLine("Существующие словари:");
+                    foreach (var dictName in existingDictionaries.Keys)
+                    {
+                        Console.WriteLine(dictName);
+                    }
+                    Console.Write("Введите имя файла словаря: ");
+                    string? selectedFile = Console.ReadLine() + ".txt";
+                    Console.Write("Введите искаемое слово: ");
+                    string? searchWord = Console.ReadLine();
+                    dic.SearchWord(searchWord, selectedFile);
+                    Thread.Sleep(700);
+                    Console.Clear();
+                    break;
+
+                case "5":
+                    Console.WriteLine("Существующие словари:");
+                    foreach (var dictName in existingDictionaries.Keys)
+                    {
+                        Console.WriteLine(dictName);
+                    }
+                    Console.Write("Введите имя файла для экспорта (.txt): ");
+                    string exportFileName = Console.ReadLine();
+                    Console.Write("Введите имя существующего словаря для экспорта: ");
+                    string selectedFile5 = Console.ReadLine() + ".txt";
+                    dic.ExportDictionaryToFile(selectedFile5, exportFileName); 
+                    break;
+
+                case "6":
                     Console.WriteLine("Существующие словари:");
                     foreach (var dictName in existingDictionaries.Keys)
                     {
@@ -326,12 +480,12 @@ class Program
                     Console.Write("Введите удаляемое слово: ");
                     string? removeWord = Console.ReadLine();
                     dic.RemoveWord(removeWord, selectedFile2);
-                    Thread.Sleep(100);
+                    Thread.Sleep(700);
                     Console.Clear();
                     break;
 
-                case "5":
-                    Console.WriteLine("Существующие словари:"); 
+                case "7":
+                    Console.WriteLine("Существующие словари:");
                     foreach (var dictName in existingDictionaries.Keys)
                     {
                         Console.WriteLine(dictName);
@@ -355,10 +509,11 @@ class Program
                     Console.Write("Введите перевод слова, которую хотите удалить: ");
                     string? removeTranslation = Console.ReadLine();
                     dic.RemoveTranslation(_removeWord, removeTranslation, selectedFile3);
-
+                    Thread.Sleep(700);
+                    Console.Clear();
                     break;
 
-                case "6":
+                case "8":
                     exit = true;
                     Console.WriteLine("Пока!  Sayōnara!  GoodBye!  До побачення!.");
                     break;
