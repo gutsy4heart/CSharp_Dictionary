@@ -450,7 +450,7 @@ class Program
                         Console.WriteLine(dictName);
                     }
                     Console.Write("Введите имя файла для экспорта (.txt): ");
-                    string exportFileName = Console.ReadLine();
+                    string exportFileName = Console.ReadLine() + ".txt";
                     Console.Write("Введите имя существующего словаря для экспорта: ");
                     string selectedFile5 = Console.ReadLine() + ".txt";
                     dic.ExportDictionaryToFile(selectedFile5, exportFileName);
