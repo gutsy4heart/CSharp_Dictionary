@@ -6,13 +6,13 @@ using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Threading;
 
-internal class TranslateDictionary
+internal class Dictionaries
 {
     private string? languageTo;
     private string? languageFrom;
     private Dictionary<string, List<string>> dictionary;
 
-    public TranslateDictionary(string? languageTo, string? languageFrom)
+    public Dictionaries(string? languageTo, string? languageFrom)
     {
         this.languageTo = languageTo;
         this.languageFrom = languageFrom;
@@ -271,16 +271,10 @@ internal class TranslateDictionary
         }
     }
 
-
-    public static TranslateDictionary CreateDictionary(string languageFrom, string languageTo)
-    {
-        return new TranslateDictionary(languageTo, languageFrom);
-    }
     public Dictionary<string, List<string>> GetDictionary()
     {
         return dictionary;
     }
-
 }
 
 class Program
@@ -291,16 +285,16 @@ class Program
         Console.ForegroundColor = ConsoleColor.White;
         string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "bin", "Debug", "net6.0");
 
-        Dictionary<string, TranslateDictionary> existingDictionaries = new Dictionary<string, TranslateDictionary>();
+        Dictionary<string, Dictionaries> existingDictionaries = new Dictionary<string, Dictionaries>();
 
-        TranslateDictionary dic = new TranslateDictionary("", "");
+        Dictionaries dic = new Dictionaries("", "");
 
         string[] txtFiles = Directory.GetFiles(basePath, "*.txt");
 
         foreach (string file in txtFiles)
         {
             string fileName = Path.GetFileNameWithoutExtension(file);
-            TranslateDictionary dictionary = new TranslateDictionary(null, null);
+            Dictionaries dictionary = new Dictionaries(null, null);
             dictionary.LoadDictionaryFromFile(file);
             existingDictionaries[fileName] = dictionary;
         }
@@ -330,10 +324,10 @@ class Program
                     languageFrom = Console.ReadLine();
                     Console.Write("На какой язык? ");
                     languageTo = Console.ReadLine();
-                    Console.Write("Введите имя файла для сохранения словаря(.txt): ");
+                    Console.Write("Введите имя файла для сохранения словаря: ");
                     filename = Console.ReadLine() + ".txt";
 
-                    TranslateDictionary newDictionary = new TranslateDictionary(languageTo, languageFrom);
+                    Dictionaries newDictionary = new Dictionaries(languageTo, languageFrom);
                     existingDictionaries[filename] = newDictionary;
 
                     newDictionary.SaveDictionaryToFile(filename);
@@ -352,7 +346,7 @@ class Program
                         string selectedDictionary = Console.ReadLine();
                         if (existingDictionaries.ContainsKey(selectedDictionary))
                         {
-                            TranslateDictionary selectedDict = existingDictionaries[selectedDictionary];
+                            Dictionaries selectedDict = existingDictionaries[selectedDictionary];
                             Console.Write("Введите слово для добавления: ");
                             string word = Console.ReadLine();
                             Console.Write("Введите перевод(ы) через запятую: ");
@@ -375,6 +369,8 @@ class Program
                     {
                         Console.WriteLine("Нет существующих словарей.");
                     }
+                    Console.ReadLine();
+                    Console.Clear();
                     break;
 
                 case "3":
@@ -389,7 +385,7 @@ class Program
                     if (existingDictionaries.ContainsKey(selectedDictName))
                     {
                         uint i = 1;
-                        TranslateDictionary words = existingDictionaries[selectedDictName];
+                        Dictionaries words = existingDictionaries[selectedDictName];
                         foreach (var word in existingDictionaries[selectedDictName].GetDictionary())
                         {
                             Console.WriteLine($"{i}. {word.Key}: {string.Join(", ", word.Value)}");
@@ -428,6 +424,8 @@ class Program
                     {
                         Console.WriteLine("Словарь не найден.");
                     }
+                    Console.ReadLine();
+                    Console.Clear();
                     break;
 
                 case "4":
@@ -441,7 +439,7 @@ class Program
                     Console.Write("Введите искаемое слово: ");
                     string? searchWord = Console.ReadLine();
                     dic.SearchWord(searchWord, selectedFile);
-                    Thread.Sleep(700);
+                    Console.ReadLine();
                     Console.Clear();
                     break;
 
@@ -455,7 +453,9 @@ class Program
                     string exportFileName = Console.ReadLine();
                     Console.Write("Введите имя существующего словаря для экспорта: ");
                     string selectedFile5 = Console.ReadLine() + ".txt";
-                    dic.ExportDictionaryToFile(selectedFile5, exportFileName); 
+                    dic.ExportDictionaryToFile(selectedFile5, exportFileName);
+                    Console.ReadLine();
+                    Console.Clear();
                     break;
 
                 case "6":
@@ -476,13 +476,19 @@ class Program
                             Console.WriteLine($"{i}. {item}");
                             i++;
                         }
+
+                        Console.Write("Введите удаляемое слово: ");
+                        string? removeWord = Console.ReadLine();
+                        dic.RemoveWord(removeWord, selectedFile2);
+                        Console.ReadLine();
+                        Console.Clear();
                     }
-                    Console.Write("Введите удаляемое слово: ");
-                    string? removeWord = Console.ReadLine();
-                    dic.RemoveWord(removeWord, selectedFile2);
-                    Thread.Sleep(700);
-                    Console.Clear();
+                    else
+                    {
+                        Console.WriteLine("Файл словаря не найден.");
+                    }
                     break;
+
 
                 case "7":
                     Console.WriteLine("Существующие словари:");
@@ -509,13 +515,13 @@ class Program
                     Console.Write("Введите перевод слова, которую хотите удалить: ");
                     string? removeTranslation = Console.ReadLine();
                     dic.RemoveTranslation(_removeWord, removeTranslation, selectedFile3);
-                    Thread.Sleep(700);
+                    Console.ReadLine();
                     Console.Clear();
                     break;
 
                 case "8":
                     exit = true;
-                    Console.WriteLine("Пока!  Sayōnara!  GoodBye!  До побачення!.");
+                    Console.WriteLine("Пока!  Sayōnara!  GoodBye!  До побачення!");
                     break;
 
                 default:
