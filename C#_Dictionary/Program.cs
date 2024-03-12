@@ -42,7 +42,7 @@ internal class Dictionaries
         if (File.Exists(filename))
         {
             var lines = File.ReadAllLines(filename).ToList();
-            var removed = false;
+            bool removed = false;
             for (int i = 0; i < lines.Count; i++)
             {
                 var parts = lines[i].Split(':');
@@ -74,7 +74,7 @@ internal class Dictionaries
         if (File.Exists(filename))
         {
             var lines = File.ReadAllLines(filename).ToList();
-            var removed = false;
+            bool removed = false;
             for (int i = 0; i < lines.Count; i++)
             {
                 var parts = lines[i].Split(':');
@@ -153,7 +153,7 @@ internal class Dictionaries
         if (File.Exists(filename))
         {
             var lines = File.ReadAllLines(filename).ToList();
-            var replaced = false;
+            bool replaced = false;
             for (int i = 0; i < lines.Count; i++)
             {
                 var parts = lines[i].Split(':');
@@ -185,7 +185,7 @@ internal class Dictionaries
         if (File.Exists(filename))
         {
             var lines = File.ReadAllLines(filename).ToList();
-            var replaced = false;
+            bool replaced = false;
             for (int i = 0; i < lines.Count; i++)
             {
                 var parts = lines[i].Split(':');
@@ -284,7 +284,7 @@ class Program
         Console.BackgroundColor = ConsoleColor.DarkYellow;
         Console.ForegroundColor = ConsoleColor.White;
         string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "bin", "Debug", "net6.0");
-
+       
         Dictionary<string, Dictionaries> existingDictionaries = new Dictionary<string, Dictionaries>();
 
         Dictionaries dic = new Dictionaries("", "");
